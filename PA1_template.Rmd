@@ -58,7 +58,7 @@ df$Average <- df$steps/Hm
 LineSeriesPlot
 
 ```{r}
-with(na.omit(df),plot(x=interval,y=Average,type="l",col="red",main = "Average Steps 5 minute interval"))
+with(na.omit(df),plot(by(steps,interval,mean),type="o",col="red",main = "Average Steps 5 minute interval"))
 
 ```
 
@@ -120,8 +120,7 @@ as.factor(df1$DayT) -> df1$DayT
 Adding a Column and Plotting Panels
 
 ```{r}
-df1$steps/Hm -> df1$Average
-
-ggplot(aes(x=interval,y=Average),data=df1)+geom_line(col="blue")+facet_wrap(~DayT,nrow = 2)
+df1 %>% group_by(interval,DayT) %>% summarise(Steps=mean(steps)) -> Grouping
+ggplot(aes(x=interval,y=Steps),data=Grouping)+geom_line()+facet_wrap(~as.factor(DayT))
 ```
 
