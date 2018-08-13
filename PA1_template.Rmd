@@ -1,25 +1,127 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
+title: "Activity Monitoring"
+author: "Yash Singhal"
+output:
   html_document:
-    keep_md: true
+    theme: cosmo
 ---
 
+### Loading and preprocessing the data
 
-## Loading and preprocessing the data
-
-
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
+```{r include=FALSE}
+library(dplyr)
+library(zoo)
+library(ggplot2)
+```
 
 
+```{r}
 
-## Imputing missing values
+df <- read.csv("activity.csv")
+
+```
 
 
+Here I am Adding a Column using the Time Series Function (Day elapsed Column)
 
-## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+as.ts(df$date) -> df$Time_Series
+```
+
+### What is mean total number of steps taken per day?
+
+Using Group by operation on date column to determine the total no of steps each date
+
+```{r}
+df %>% group_by(date) %>% summarise(Steps=sum(steps,na.rm=T)) -> L
+paste("Total Steps taken per day",Total_Number <- sum(df$steps,na.rm = T)/max(df$Time_Series))
+paste("Median no of steps taken per day",median(L$Steps))
+
+```
+
+Histogram of the total number of steps taken each day
+
+```{r}
+hist(L$Steps,main="Total no of steps Taken each day",col="red")
+```
+
+### What is the average daily activity pattern?
+
+Adding a Column
+
+```{r}
+
+mean(L$Steps) -> Hm
+df$Average <- df$steps/Hm
+```
+
+LineSeriesPlot
+
+```{r}
+with(na.omit(df),plot(x=interval,y=Average,type="l",col="red",main = "Average Steps 5 minute interval"))
+
+```
+
+That 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps
+
+```{r}
+df[which.max(df$Average),]
+```
+
+### Imputing missing values
+
+```{r}
+paste("No of missing value",colSums(is.na(df))[1])
+```
+
+Median would be better suited to fill the missing values as dataset is heavily skewed
+
+```{r}
+hist(df$steps)
+```
+
+Filling in the median
+
+```{r}
+median(df$steps,na.rm=T) -> Median
+df1 <- df
+na.fill(df$steps,0) -> df1$steps
+```
+
+Grouping with respect to new data set
+
+```{r}
+df1 %>% group_by(date) %>% summarise(Steps=sum(steps)) -> L1
+```
+
+```{r}
+paste("Total Steps taken per day",Total_Number <- sum(df1$steps,na.rm = T)/max(df$Time_Series))
+paste("Median no of steps taken per day",median(L1$Steps))
+hist(L1$Steps,col="red")
+```
+
+Almost No difference since the Median was 0
+
+### Are there differences in activity patterns between weekdays and weekends
+
+Making a Function to Add column whether there is a weekend or weekday.New Factor Column is DayT
+
+```{r}
+Check_Weekday <- function(x){
+seq <- c("Monday","Tuesday","Wednesday","Thursday","Friday")
+if (x %in% seq){return ("weekday")}
+else {return ("weekend")}
+}
+sapply(weekdays(as.POSIXct(df1$date)),Check_Weekday) -> df1$DayT
+as.factor(df1$DayT) -> df1$DayT
+
+```
+
+Adding a Column and Plotting Panels
+
+```{r}
+df1$steps/Hm -> df1$Average
+
+ggplot(aes(x=interval,y=Average),data=df1)+geom_line(col="blue")+facet_wrap(~DayT,nrow = 2)
+```
+
